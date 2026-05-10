@@ -24,10 +24,13 @@ python -m venv .venv
 pip install -r requirements.txt
 
 
-**Mac:** ```sh
+**Mac:** 
+```sh
 python3 -m venv venv  
 source venv/bin/activate  
 pip install -r requirements.txt  
+```
+
 Running Guide
 After activating the Python virtual environment, you can run the game using:
 
@@ -35,8 +38,11 @@ Windows: ```bat
 python main.py
 
 
-**Mac:** ```sh
-python3 main.py  
+**Mac:** 
+```sh
+python3 main.py
+```
+
 Tutorial / Usage
 Main Menu: Launch the app to access the main dashboard. Click START GAME to begin a shift, DIFFICULTY to adjust challenge multipliers, VIEW STATS to review historic logs, or RESET ALL PROGRESS to clear CSV records back to Day 1.
 
