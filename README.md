@@ -31,7 +31,7 @@ source venv/bin/activate
 pip install -r requirements.txt  
 ```
 
-Running Guide
+**Running Guide**
 After activating the Python virtual environment, you can run the game using:
 
 Windows: ```bat
@@ -44,40 +44,38 @@ python3 main.py
 ```
 
 Tutorial / Usage
-Main Menu: Launch the app to access the main dashboard. Click START GAME to begin a shift, DIFFICULTY to adjust challenge multipliers, VIEW STATS to review historic logs, or RESET ALL PROGRESS to clear CSV records back to Day 1.
+1. Main Menu: Launch the app to access the main dashboard. Click START GAME to begin a shift, DIFFICULTY to adjust challenge multipliers, VIEW STATS to review historic logs, or RESET ALL PROGRESS to clear CSV records back to Day 1.
 
-Preparing Orders: * Check incoming customer request bubbles.
+2. Preparing Orders:
+- Check incoming customer request bubbles.
+- Click ingredients at the bottom to assemble items progressively into mixing slots or blenders.
+- For cooked meat, click the raw meat button to place it on the grill, wait for progress to reach 100%, and click to pick it up.
+- For smoothies, combine fruit + ice + syrup in the blender, wait for progress completion, and click to pick up.
 
-Click ingredients at the bottom to assemble items progressively into mixing slots or blenders.
+3. Serving & Trashing: Click and drag ready items from the holding slots directly onto the matching customer. If you make a mistake, drag the incorrect item to the TRASH bin.
 
-For cooked meat, click the raw meat button to place it on the grill, wait for progress to reach 100%, and click to pick it up.
+4. Pause & Recipes: Use the PAUSE button to safely halt the timer (hiding the board entirely), or click RECIPES for quick ingredient guides.
 
-For smoothies, combine fruit + ice + syrup in the blender, wait for progress completion, and click to pick up.
+**Game Features**
+- Dynamic Order Stacking: Features complete progressive pixel art updates as items are assembled step-by-step.
 
-Serving & Trashing: Click and drag ready items from the holding slots directly onto the matching customer. If you make a mistake, drag the incorrect item to the TRASH bin.
+- VIP Customers: A 25% chance for customers to spawn as VIPs, doubling the revenue earned upon successful fulfillment.
 
-Pause & Recipes: Use the PAUSE button to safely halt the timer (hiding the board entirely), or click RECIPES for quick ingredient guides.
+- 100% Foolproof Combinations: Pre-cached mathematical subset combinations per prep zone prevent application crashes entirely.
 
-Game Features
-Dynamic Order Stacking: Features complete progressive pixel art updates as items are assembled step-by-step.
+- Integrated Business Analytics: Displays interactive charts (Pie charts and Bar graphs) evaluating daily performance.
 
-VIP Customers: A 25% chance for customers to spawn as VIPs, doubling the revenue earned upon successful fulfillment.
+- Secure Pause System: Prevents board inspection during pauses via an integrated topmost cover layout.
 
-100% Foolproof Combinations: Pre-cached mathematical subset combinations per prep zone prevent application crashes entirely.
-
-Integrated Business Analytics: Displays interactive charts (Pie charts and Bar graphs) evaluating daily performance.
-
-Secure Pause System: Prevents board inspection during pauses via an integrated topmost cover layout.
-
-Known Bugs
+**Known Bugs**
 None. All core gameplay features, custom graphic rendering, dynamic order validations, and complete statistical tracking components have been fully implemented and tested.
 
-Unfinished Works
+**Unfinished Works**
 None. The application is 100% complete.
 
-External Sources
-Custom Original Pixel Art assets.
+**External Sources**
+- Custom Original Pixel Art assets.
 
-Standard GUI Framework by Python Tkinter & Pillow.
+- Standard GUI Framework by Python Tkinter & Pillow.
 
-Statistics Charting engine powered by Matplotlib.
+- Statistics Charting engine powered by Matplotlib.
