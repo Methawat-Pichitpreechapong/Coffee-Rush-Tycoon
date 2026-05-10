@@ -1,8 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
+import tkinter.messagebox as mb
 import random
+from PIL import Image, ImageTk 
 
-# อิมพอร์ตคลาสจากไฟล์ objects.py
+# Import associated models from objects.py
 from objects import HoldingSlot, Ingredient, Customer
 
 class MainMenuFrame(tk.Frame):
@@ -10,20 +12,41 @@ class MainMenuFrame(tk.Frame):
         super().__init__(parent, bg="#D7CCC8")
         self.controller = controller
         bg_img = self.controller.image_cache.get("bg_main")
-        if bg_img: tk.Label(self, image=bg_img).place(x=0, y=0, relwidth=1, relheight=1)
+        if bg_img: 
+            bg_label = tk.Label(self, image=bg_img)
+            bg_label.image = bg_img  
+            bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         title_bg = tk.Frame(self, bg="#D7CCC8", padx=20, pady=10) 
         title_bg.place(relx=0.5, rely=0.2, anchor="center")
         tk.Label(title_bg, text="☕ COFFEE RUSH TYCOON", font=("Arial", 38, "bold"), bg="#D7CCC8", fg="black").pack()
 
-        btn_y = 0.5
+        btn_y = 0.42
+        # Widened standard buttons significantly to width=24 to ensure full strings render without clipping
         for text, cmd_frame, color in [("▶ START GAME", "GameFrame", "#4CAF50"), 
                                        ("⚙ DIFFICULTY", "DifficultyFrame", "#FF9800"), 
-                                       ("📊 VIEW STATS", "StatsFrame", "#2196F3")]:
-            btn = tk.Label(self, text=text, font=("Arial", 20, "bold"), bg=color, fg="black", width=18, pady=12, cursor="hand2", relief="raised", bd=2)
+                                       ("📊 VIEW STATS", "StatsFrame", "#2196F3"),
+                                       ("🔄 RESET ALL PROGRESS", "RESET_CMD", "#F44336")]:
+            btn = tk.Label(self, text=text, font=("Arial", 20, "bold"), bg=color, fg="white" if color=="#F44336" else "black", width=24, pady=12, cursor="hand2", relief="raised", bd=2)
             btn.place(relx=0.5, rely=btn_y, anchor="center")
-            btn.bind("<Button-1>", lambda e, f=cmd_frame: self.controller.show_frame(f))
+            
+            if cmd_frame == "RESET_CMD":
+                btn.bind("<Button-1>", lambda e: self.confirm_reset())
+            else:
+                btn.bind("<Button-1>", lambda e, f=cmd_frame: self.controller.show_frame(f))
+                
             btn_y += 0.12
+
+    def confirm_reset(self):
+        """ Prompts confirmation before resetting game day and clearing saved cash completely """
+        ans = mb.askyesno("Confirm Reset", "Are you sure you want to reset ALL game progress?\nThis will restart from Day 1 and clear your current cash to $0.")
+        if ans:
+            self.controller.current_day = 1
+            self.controller.stats_manager.reset_stats()
+            if "GameFrame" in self.controller.frames:
+                self.controller.frames["GameFrame"].cash = 0
+                self.controller.frames["GameFrame"].update_cash(0)
+            mb.showinfo("Success", "Game progress has been completely reset to Day 1!")
 
 class GameFrame(tk.Frame):
     def __init__(self, parent, controller):
@@ -50,6 +73,8 @@ class GameFrame(tk.Frame):
         self.is_paused = False
         self.is_dragging = False
         self.drag_source = None
+        self.drag_img_id = None  
+        
         self.after_id = None
         self.timer_id = None
         
@@ -83,24 +108,25 @@ class GameFrame(tk.Frame):
 
         self.canvas.create_text(166, 380, text="🥤 SMOOTHIES Zone", font=("Arial", 14, "bold"), fill="black", tags="all")
         self.canvas.create_rectangle(50, 410, 210, 550, outline="black", width=2, tags="all")
-        
-        jug1 = self.canvas.create_oval(70, 420, 110, 500, fill="#CFD8DC", tags="all")
-        self.canvas.create_rectangle(70, 500, 110, 540, fill="gray", tags="all")
-        text1 = self.canvas.create_text(90, 460, text="", font=("Arial", 8, "bold"), fill="black", tags="all", state="hidden", justify="center")
 
-        jug2 = self.canvas.create_oval(150, 420, 190, 500, fill="#CFD8DC", tags="all")
-        self.canvas.create_rectangle(150, 500, 190, 540, fill="gray", tags="all")
-        text2 = self.canvas.create_text(170, 460, text="", font=("Arial", 8, "bold"), fill="black", tags="all", state="hidden", justify="center")
+        jug1 = self.canvas.create_oval(70, 420, 110, 500, fill="#CFD8DC", tags=("all", "blender_slot_0"))
+        base1 = self.canvas.create_rectangle(70, 500, 110, 540, fill="gray", tags=("all", "blender_slot_0"))
+        text1 = self.canvas.create_text(90, 460, text="", font=("Arial", 8, "bold"), fill="black", state="hidden", justify="center", tags=("all", "blender_slot_0"))
+
+        jug2 = self.canvas.create_oval(150, 420, 190, 500, fill="#CFD8DC", tags=("all", "blender_slot_1"))
+        base2 = self.canvas.create_rectangle(150, 500, 190, 540, fill="gray", tags=("all", "blender_slot_1"))
+        text2 = self.canvas.create_text(170, 460, text="", font=("Arial", 8, "bold"), fill="black", state="hidden", justify="center", tags=("all", "blender_slot_1"))
 
         self.blenders = [
-            {"bg_id": jug1, "text_id": text1, "state": "empty", "mix": [], "recipe_name": None, "progress": 0},
-            {"bg_id": jug2, "text_id": text2, "state": "empty", "mix": [], "recipe_name": None, "progress": 0}
+            {"bg_id": jug1, "base_id": base1, "text_id": text1, "state": "empty", "mix": [], "recipe_name": None, "progress": 0, "img_id": None, "slot_tag": "blender_slot_0"},
+            {"bg_id": jug2, "base_id": base2, "text_id": text2, "state": "empty", "mix": [], "recipe_name": None, "progress": 0, "img_id": None, "slot_tag": "blender_slot_1"}
         ]
         
-        self.canvas.tag_bind(jug1, "<Button-1>", lambda e, b=self.blenders[0]: self.pickup_blended_smoothie(b, e))
-        self.canvas.tag_bind(text1, "<Button-1>", lambda e, b=self.blenders[0]: self.pickup_blended_smoothie(b, e))
-        self.canvas.tag_bind(jug2, "<Button-1>", lambda e, b=self.blenders[1]: self.pickup_blended_smoothie(b, e))
-        self.canvas.tag_bind(text2, "<Button-1>", lambda e, b=self.blenders[1]: self.pickup_blended_smoothie(b, e))
+        self.canvas.tag_bind("blender_slot_0", "<Button-1>", lambda e, b=self.blenders[0]: self.pickup_blended_smoothie(b, e))
+        self.canvas.tag_bind("blender_slot_1", "<Button-1>", lambda e, b=self.blenders[1]: self.pickup_blended_smoothie(b, e))
+        
+        for b in self.blenders:
+            self.update_blender_visual(b)
 
         self.holding_slots.append(HoldingSlot(self.canvas, self, "Smoothies", 235, 415, 305, 455))
         self.holding_slots.append(HoldingSlot(self.canvas, self, "Smoothies", 235, 460, 305, 500))
@@ -130,25 +156,29 @@ class GameFrame(tk.Frame):
         self.holding_slots.append(HoldingSlot(self.canvas, self, "Burger", 885, 415, 975, 475))
 
         self.canvas.create_rectangle(710, 500, 780, 580, fill="#CFD8DC", outline="black", tags="all")
-        self.canvas.create_text(745, 565, text="ที่ทอด", font=("Arial", 9), fill="black", tags="all")
-        meat1 = self.canvas.create_oval(720, 510, 770, 560, fill="#E57373", tags="all", state="hidden")
-        text1 = self.canvas.create_text(745, 535, text="0%", font=("Arial", 8, "bold"), fill="white", tags="all", state="hidden")
+        self.canvas.create_text(745, 565, text="GRILL", font=("Arial", 9), fill="black", tags="all")
+        meat1 = self.canvas.create_image(745, 530, image=None, tags=("all", "grill_slot_0"), state="hidden")
+        text1 = self.canvas.create_text(745, 530, text="0%", font=("Arial", 10, "bold"), fill="white", tags=("all", "grill_slot_0"), state="hidden")
 
         self.canvas.create_rectangle(790, 500, 860, 580, fill="#CFD8DC", outline="black", tags="all")
-        self.canvas.create_text(825, 565, text="ที่ทอด", font=("Arial", 9), fill="black", tags="all")
-        meat2 = self.canvas.create_oval(800, 510, 850, 560, fill="#E57373", tags="all", state="hidden")
-        text2 = self.canvas.create_text(825, 535, text="0%", font=("Arial", 8, "bold"), fill="white", tags="all", state="hidden")
+        self.canvas.create_text(825, 565, text="GRILL", font=("Arial", 9), fill="black", tags="all")
+        meat2 = self.canvas.create_image(825, 530, image=None, tags=("all", "grill_slot_1"), state="hidden")
+        text2 = self.canvas.create_text(825, 530, text="0%", font=("Arial", 10, "bold"), fill="white", tags=("all", "grill_slot_1"), state="hidden")
 
         self.canvas.create_rectangle(870, 500, 940, 580, fill="#CFD8DC", outline="black", tags="all")
-        self.canvas.create_text(905, 565, text="ที่ทอด", font=("Arial", 9), fill="black", tags="all")
-        meat3 = self.canvas.create_oval(880, 510, 930, 560, fill="#E57373", tags="all", state="hidden")
-        text3 = self.canvas.create_text(905, 535, text="0%", font=("Arial", 8, "bold"), fill="white", tags="all", state="hidden")
+        self.canvas.create_text(905, 565, text="GRILL", font=("Arial", 9), fill="black", tags="all")
+        meat3 = self.canvas.create_image(905, 530, image=None, tags=("all", "grill_slot_2"), state="hidden")
+        text3 = self.canvas.create_text(905, 530, text="0%", font=("Arial", 10, "bold"), fill="white", tags=("all", "grill_slot_2"), state="hidden")
 
         self.grills = [
-            {"meat_id": meat1, "text_id": text1, "state": "empty", "progress": 0},
-            {"meat_id": meat2, "text_id": text2, "state": "empty", "progress": 0},
-            {"meat_id": meat3, "text_id": text3, "state": "empty", "progress": 0}
+            {"meat_id": meat1, "text_id": text1, "state": "empty", "progress": 0, "slot_tag": "grill_slot_0"},
+            {"meat_id": meat2, "text_id": text2, "state": "empty", "progress": 0, "slot_tag": "grill_slot_1"},
+            {"meat_id": meat3, "text_id": text3, "state": "empty", "progress": 0, "slot_tag": "grill_slot_2"}
         ]
+        
+        self.canvas.tag_bind("grill_slot_0", "<Button-1>", lambda e, g=self.grills[0]: self.pickup_cooked_meat(g, e))
+        self.canvas.tag_bind("grill_slot_1", "<Button-1>", lambda e, g=self.grills[1]: self.pickup_cooked_meat(g, e))
+        self.canvas.tag_bind("grill_slot_2", "<Button-1>", lambda e, g=self.grills[2]: self.pickup_cooked_meat(g, e))
         
         Ingredient(self.canvas, self, "Bun", 715, 650, "#FFCC80")
         Ingredient(self.canvas, self, "Vegetable", 795, 650, "#81C784")
@@ -177,12 +207,10 @@ class GameFrame(tk.Frame):
                             blender["state"] = "blending"
                             blender["recipe_name"] = recipe
                             blender["progress"] = 0
-                            self.canvas.itemconfig(blender["bg_id"], fill="#FFCDD2") 
-                            self.canvas.itemconfig(blender["text_id"], text="0%", state="normal")
+                            self.update_blender_visual(blender)  
                             self.blend_smoothie_step(blender)
                         else:
-                            self.canvas.itemconfig(blender["bg_id"], fill="#FFF59D")
-                            self.canvas.itemconfig(blender["text_id"], text="\n".join(blender["mix"]), state="normal")
+                            self.update_blender_visual(blender)  
                         return True
             self.show_feedback(src_x, src_y, "⚠️ FULL!", "red")
             return False
@@ -213,10 +241,10 @@ class GameFrame(tk.Frame):
         blender["progress"] += 20
         if blender["progress"] >= 100:
             blender["state"] = "ready"
-            self.canvas.itemconfig(blender["bg_id"], fill="#A5D6A7") 
-            self.canvas.itemconfig(blender["text_id"], text="PICK")
+            self.update_blender_visual(blender)  
         else:
-            self.canvas.itemconfig(blender["text_id"], text=f"{blender['progress']}%")
+            self.canvas.itemconfig(blender["text_id"], text=f"{blender['progress']}%", state="normal")
+            self.canvas.tag_raise(blender["text_id"]) 
             self.after(500, lambda: self.blend_smoothie_step(blender))
 
     def pickup_blended_smoothie(self, blender, event):
@@ -225,22 +253,31 @@ class GameFrame(tk.Frame):
             if zone_slots:
                 slot = zone_slots[0]
                 slot.add_prebuilt_item(blender["recipe_name"])
+                
                 blender["mix"] = []
                 blender["state"] = "empty"
                 blender["recipe_name"] = None
                 blender["progress"] = 0
-                self.canvas.itemconfig(blender["bg_id"], fill="#CFD8DC")
-                self.canvas.itemconfig(blender["text_id"], state="hidden")
+                
+                self.update_blender_visual(blender) 
             else:
                 self.show_feedback(event.x, event.y, "⚠️ FULL!", "red")
 
     def start_cooking_meat(self, event, src_x, src_y):
+        cache = self.controller.image_cache
+        img_raw = cache.get("grill_cooking")
+        
         for grill in self.grills:
             if grill["state"] == "empty":
                 grill["state"] = "cooking"
                 grill["progress"] = 0
-                self.canvas.itemconfig(grill["meat_id"], state="normal", fill="#E57373") 
-                self.canvas.itemconfig(grill["text_id"], state="normal", text="0%")
+                
+                if img_raw:
+                    self.canvas.itemconfig(grill["meat_id"], image=img_raw, state="normal")
+                
+                self.canvas.itemconfig(grill["text_id"], state="normal", text="0%", fill="white")
+                self.canvas.tag_raise(grill["text_id"]) 
+                
                 self.cook_meat_step(grill)
                 return
         self.show_feedback(src_x, src_y, "⚠️ FULL!", "red")
@@ -252,14 +289,20 @@ class GameFrame(tk.Frame):
             return
             
         grill["progress"] += 10
+        cache = self.controller.image_cache
+        
         if grill["progress"] >= 100:
             grill["state"] = "cooked"
-            self.canvas.itemconfig(grill["meat_id"], fill="#4E342E") 
-            self.canvas.itemconfig(grill["text_id"], text="PICK")
-            self.canvas.tag_bind(grill["meat_id"], "<Button-1>", lambda e, g=grill: self.pickup_cooked_meat(g, e))
-            self.canvas.tag_bind(grill["text_id"], "<Button-1>", lambda e, g=grill: self.pickup_cooked_meat(g, e))
+            img_cooked = cache.get("grill_cooked")
+            
+            if img_cooked:
+                self.canvas.itemconfig(grill["meat_id"], image=img_cooked)
+            
+            self.canvas.itemconfig(grill["text_id"], text="PICK", fill="#FFEB3B")
+            self.canvas.tag_raise(grill["text_id"])
         else:
             self.canvas.itemconfig(grill["text_id"], text=f"{grill['progress']}%")
+            self.canvas.tag_raise(grill["text_id"])
             self.after(500, lambda: self.cook_meat_step(grill))
 
     def pickup_cooked_meat(self, grill, event):
@@ -269,24 +312,19 @@ class GameFrame(tk.Frame):
                 self.canvas.itemconfig(grill["meat_id"], state="hidden")
                 self.canvas.itemconfig(grill["text_id"], state="hidden")
                 grill["state"] = "empty"
-                self.canvas.tag_unbind(grill["meat_id"], "<Button-1>")
-                self.canvas.tag_unbind(grill["text_id"], "<Button-1>")
 
     def reset_stations(self):
         for grill in self.grills:
             self.canvas.itemconfig(grill["meat_id"], state="hidden")
             self.canvas.itemconfig(grill["text_id"], state="hidden")
             grill["state"] = "empty"
-            self.canvas.tag_unbind(grill["meat_id"], "<Button-1>")
-            self.canvas.tag_unbind(grill["text_id"], "<Button-1>")
             
         for blender in self.blenders:
             blender["state"] = "empty"
             blender["mix"] = []
             blender["recipe_name"] = None
             blender["progress"] = 0
-            self.canvas.itemconfig(blender["bg_id"], fill="#CFD8DC")
-            self.canvas.itemconfig(blender["text_id"], state="hidden")
+            self.update_blender_visual(blender)
 
     def on_resize(self, event):
         w_scale = event.width / self.base_w
@@ -365,7 +403,8 @@ class GameFrame(tk.Frame):
         if not self.is_playing:
             self.is_playing = True
             
-            self.cash = 0
+            if self.controller.current_day == 1:
+                self.cash = 0
             self.update_cash(0)
             
             self.time_left = 120
@@ -395,8 +434,23 @@ class GameFrame(tk.Frame):
     def toggle_pause(self):
         if not self.is_playing: return
         self.is_paused = not self.is_paused
-        if self.is_paused: self.btn_pause.config(text="▶ RESUME", fg="blue")
-        else: self.btn_pause.config(text="⏸ PAUSE", fg="black")
+        
+        if self.is_paused:
+            self.btn_pause.config(text="▶ RESUME", fg="blue")
+            overlay = Image.new('RGBA', (4000, 3000), (0, 0, 0, 150))
+            self.pause_image = ImageTk.PhotoImage(overlay)
+            self.canvas.create_image(0, 0, image=self.pause_image, anchor="nw", tags="pause_overlay")
+            
+            center_x = self.canvas.winfo_width() / 2
+            center_y = self.canvas.winfo_height() / 2
+            self.canvas.create_text(center_x, center_y, text="PAUSED", font=("Arial", 60, "bold"), fill="white", tags="pause_overlay")
+            
+            self.canvas.tag_raise("pause_overlay")
+            self.canvas.tag_bind("pause_overlay", "<Button-1>", lambda e: "break")
+            self.canvas.tag_bind("pause_overlay", "<B1-Motion>", lambda e: "break")
+        else:
+            self.btn_pause.config(text="⏸ PAUSE", fg="black")
+            self.canvas.delete("pause_overlay")
 
     def show_recipes(self):
          was_paused = getattr(self, 'is_paused', False)
@@ -456,59 +510,80 @@ class GameFrame(tk.Frame):
         
         self.is_dragging = True
         self.drag_source = source
-        self.ghost_bg = self.canvas.create_rectangle(event.x-40, event.y-20, event.x+40, event.y+20, fill="#4CAF50", outline="black", width=2)
-        self.ghost_text = self.canvas.create_text(event.x, event.y, text=source.recipe_name.replace(" ", "\n"), font=("Arial", 9, "bold"), fill="white")
+        
+        cache = self.controller.image_cache
+        img = cache.get(f"menu_{source.recipe_name.lower()}")
+        
+        if img:
+            self.drag_img_id = self.canvas.create_image(event.x, event.y, image=img, tags="ghost_drag")
+        else:
+            self.drag_img_id = self.canvas.create_text(event.x, event.y, text=source.recipe_name, font=("Arial", 14, "bold"), fill="blue", tags="ghost_drag")
 
     def on_drag_motion(self, event):
-        if getattr(self, 'is_dragging', False):
-            self.canvas.coords(self.ghost_bg, event.x-40, event.y-20, event.x+40, event.y+20)
-            self.canvas.coords(self.ghost_text, event.x, event.y)
+        if getattr(self, 'is_dragging', False) and self.drag_img_id:
+            self.canvas.coords(self.drag_img_id, event.x, event.y)
 
     def on_drag_release(self, event):
-        if not getattr(self, 'is_dragging', False): return
-        self.is_dragging = False
-        self.canvas.delete(self.ghost_bg)
-        self.canvas.delete(self.ghost_text)
-        
-        trash_coords = self.canvas.coords(self.trash_box)
-        if trash_coords and (trash_coords[0] <= event.x <= trash_coords[2]) and (trash_coords[1] <= event.y <= trash_coords[3]):
-            self.drag_source.clear()
-            self.show_feedback(event.x, event.y, "🗑️ Trashed", "red")
-            return
+            if not getattr(self, 'is_dragging', False): return
+            self.is_dragging = False
+            
+            if self.drag_img_id:
+                self.canvas.delete(self.drag_img_id)
+                self.drag_img_id = None
+            
+            trash_coords = self.canvas.coords(self.trash_box)
+            if trash_coords and (trash_coords[0] <= event.x <= trash_coords[2]) and (trash_coords[1] <= event.y <= trash_coords[3]):
+                self.drag_source.clear()
+                self.show_feedback(event.x, event.y, "🗑️ Trashed", "red")
+                return
 
-        target_cust = None
-        for c in self.customer_slots:
-            if c:
-                coords = self.canvas.coords(c.id) 
-                if coords and (coords[0] - 60 <= event.x <= coords[2] + 60) and (coords[1] - 100 <= event.y <= coords[3] + 80):
-                    target_cust = c
-                    break 
-        
-        if target_cust:
-            is_ok = (self.drag_source.recipe_name == target_cust.menu_id)
+            target_cust = None
+            for c in self.customer_slots:
+                if c:
+                    coords = self.canvas.coords(c.id) 
+                    if coords:
+                        # 💡 ตรวจจับลูกค้าแบบยืดหยุ่น: รองรับพิกัด 2 ตัว (รูปภาพ) และ 4 ตัว (รูปทรงเรขาคณิต)
+                        if len(coords) == 2:
+                            cx, cy = coords[0], coords[1]
+                            # รัศมีกว้างๆ รอบตัวลูกค้า (กึ่งกลาง x +- 60, y +- 80)
+                            if (cx - 60 <= event.x <= cx + 60) and (cy - 80 <= event.y <= cy + 80):
+                                target_cust = c
+                                break
+                        elif len(coords) == 4:
+                            if (coords[0] - 60 <= event.x <= coords[2] + 60) and (coords[1] - 100 <= event.y <= coords[3] + 80):
+                                target_cust = c
+                                break 
             
-            if is_ok:
-                base_price = self.controller.order_manager.prices.get(target_cust.menu_id, 0)
-                diff = self.controller.current_difficulty
-                multiplier = 0.5 if diff == "Easy" else 2.0 if diff == "Hard" else 1.0
-                earned = int(base_price * multiplier)
+            if target_cust:
+                is_ok = (self.drag_source.recipe_name == target_cust.menu_id)
                 
-                self.daily_earned += earned
-                self.daily_success += 1
-            else:
-                earned = 0
-                self.daily_fail += 1
-            
-            self.controller.stats_manager.log_event(target_cust.cust_type, target_cust.menu_id, 0, "Success" if is_ok else "Fail", earned)
-            
-            if is_ok:
-                self.update_cash(earned)
-                self.show_feedback(event.x, event.y, f"✅ +${earned}", "green")
-                target_cust.clear() 
-                self.customer_slots[target_cust.slot_idx] = None
-                self.drag_source.clear() 
-            else:
-                self.show_feedback(event.x, event.y, "❌ WRONG!", "red")
+                if is_ok:
+                    base_price = self.controller.order_manager.prices.get(target_cust.menu_id, 0)
+                    diff = self.controller.current_difficulty
+                    multiplier = 0.5 if diff == "Easy" else 2.0 if diff == "Hard" else 1.0
+                    
+                    if target_cust.cust_type == "VIP":
+                        multiplier *= 2.0
+                        
+                    earned = int(base_price * multiplier)
+                    
+                    self.daily_earned += earned
+                    self.daily_success += 1
+                else:
+                    earned = 0
+                    self.daily_fail += 1
+                
+                self.controller.stats_manager.log_event(target_cust.cust_type, target_cust.menu_id, 0, "Success" if is_ok else "Fail", earned)
+                
+                if is_ok:
+                    self.update_cash(earned)
+                    msg_feedback = f"⭐ VIP +${earned}" if target_cust.cust_type == "VIP" else f"✅ +${earned}"
+                    self.show_feedback(event.x, event.y, msg_feedback, "green")
+                    target_cust.clear() 
+                    self.customer_slots[target_cust.slot_idx] = None
+                    self.drag_source.clear() 
+                else:
+                    self.show_feedback(event.x, event.y, "❌ WRONG!", "red")
 
     def show_feedback(self, x, y, text, color):
         lbl = self.canvas.create_text(x, y, text=text, font=("Arial", 16, "bold"), fill=color, tags="all")
@@ -519,6 +594,49 @@ class GameFrame(tk.Frame):
             else:
                 self.canvas.delete(lbl)
         float_up(30)
+
+    def update_blender_visual(self, blender):
+            cache = self.controller.image_cache
+            img = None
+
+            if blender["state"] == "empty":
+                img = cache.get("blender_empty")  
+            elif blender["state"] in ["building", "blending"]:
+                if blender["mix"]:
+                    sorted_mix = "_".join(sorted([m.lower() for m in blender["mix"]]))
+                    img = cache.get(f"mix_{sorted_mix}")
+            elif blender["state"] == "ready":
+                if blender["recipe_name"]:
+                    img = cache.get(f"menu_{blender['recipe_name'].lower()}")
+            
+            if img:
+                self.canvas.itemconfig(blender["bg_id"], state="hidden")
+                if "base_id" in blender: self.canvas.itemconfig(blender["base_id"], state="hidden")
+                self.canvas.itemconfig(blender["text_id"], text="") 
+                
+                coords = self.canvas.coords(blender["bg_id"]) 
+                center_x = coords[0] + 20  
+                center_y = 480             
+                
+                if blender.get("img_id") is None:
+                    blender["img_id"] = self.canvas.create_image(center_x, center_y, image=img, tags=("all", blender["slot_tag"]))
+                else:
+                    self.canvas.itemconfig(blender["img_id"], image=img, state="normal")
+                    self.canvas.tag_raise(blender["img_id"])
+            else:
+                if blender.get("img_id"): self.canvas.itemconfig(blender["img_id"], state="hidden")
+                self.canvas.itemconfig(blender["bg_id"], state="normal")
+                if "base_id" in blender: self.canvas.itemconfig(blender["base_id"], state="normal")
+                    
+                if blender["state"] == "empty":
+                    self.canvas.itemconfig(blender["bg_id"], fill="#CFD8DC")
+                    self.canvas.itemconfig(blender["text_id"], state="hidden")
+                elif blender["state"] in ["building", "blending"]:
+                    self.canvas.itemconfig(blender["bg_id"], fill="#FFF59D")
+                    self.canvas.itemconfig(blender["text_id"], text="\n".join(blender["mix"]), state="normal")
+                elif blender["state"] == "ready":
+                    self.canvas.itemconfig(blender["bg_id"], fill="#A5D6A7")
+                    self.canvas.itemconfig(blender["text_id"], text="PICK", state="normal")
 
 class DifficultyFrame(tk.Frame):
     def __init__(self, parent, controller):
