@@ -7,7 +7,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ==========================================
-# ระบบจัดการสถิติ
+# Statistics Management System
 # ==========================================
 class StatsManager:
     def __init__(self):
@@ -47,7 +47,7 @@ class StatsManager:
 
     def show_charts(self):
         if not self.records:
-            print("ยังไม่มีข้อมูลสำหรับสร้างกราฟ!")
+            print("No data available to generate charts!")
             return
 
         status_counts = {"Success": 0, "Fail": 0, "Angry_Left": 0}
@@ -112,7 +112,7 @@ class StatsManager:
 
 
 # ==========================================
-# ระบบจัดการสูตรอาหารและราคา
+# Recipe Validation & Pricing Management System
 # ==========================================
 class OrderManager:
     def __init__(self):
