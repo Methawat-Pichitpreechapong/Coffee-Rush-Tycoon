@@ -23,9 +23,10 @@ The application integrates sophisticated gameplay mechanics, including real-time
   <img width="2190" height="864" alt="image" src="https://github.com/user-attachments/assets/41fe7dbc-40a6-459b-b51a-bb5376a0bee4" />
 
 
-**Proposal:** [Download Project Proposal PDF](proposal.pdf)
+**Proposal:** [Download Project Proposal PDF]([Programming 2 Proposal 6710545857.pdf](https://github.com/user-attachments/files/27571691/Programming.2.Proposal.6710545857.pdf)
+)
 
-**YouTube Presentation:** [Watch Video Presentation](https://youtu.com/YOUR_VIDEO_LINK)  
+**YouTube Presentation:** [Watch Video Presentation](https://youtu.be/SGDT1ZrRXZ8)  
 *(Includes Introduction & Demo, OOP Design Explanation, and Statistical Data Visualization)*
 
 ## 2. Concept
