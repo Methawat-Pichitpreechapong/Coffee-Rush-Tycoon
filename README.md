@@ -32,7 +32,7 @@ pip install -r requirements.txt
 ```
 
 **Running Guide**
-After activating the Python virtual environment, you can run the game using:
+- After activating the Python virtual environment, you can run the game using:
 
 Windows: ```bat
 python main.py
