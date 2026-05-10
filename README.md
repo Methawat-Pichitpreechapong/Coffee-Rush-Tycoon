@@ -12,6 +12,8 @@ To clone this project repository:
 ```sh
 git clone [https://github.com/]https://github.com/Methawat-Pichitpreechapong/Coffee-Rush-Tycoon.git 
 cd [your repository]
+```
+
 To create and activate the Python virtual environment:
 
 Windows: ```bat
