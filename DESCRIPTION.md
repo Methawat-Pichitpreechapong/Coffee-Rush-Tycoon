@@ -23,8 +23,8 @@ The application integrates sophisticated gameplay mechanics, including real-time
   <img width="2190" height="864" alt="image" src="https://github.com/user-attachments/assets/41fe7dbc-40a6-459b-b51a-bb5376a0bee4" />
 
 
-**Proposal:** [Download Project Proposal PDF]([Programming 2 Proposal 6710545857.pdf](https://github.com/user-attachments/files/27571691/Programming.2.Proposal.6710545857.pdf)
-)
+**Proposal:** [Download Project Proposal PDF](https://github.com/user-attachments/files/27571691/Programming.2.Proposal.6710545857.pdf)
+
 
 **YouTube Presentation:** [Watch Video Presentation](https://youtu.be/SGDT1ZrRXZ8)  
 *(Includes Introduction & Demo, OOP Design Explanation, and Statistical Data Visualization)*
@@ -40,7 +40,7 @@ The fast-paced food and beverage industry serves as a rigorous environment for t
 
 ## 3. UML Class Diagram
 The UML Class Diagram illustrates the structural architecture of the system, including core classes, attributes, methods, and relationships (association, inheritance).  
-**Submission Requirement:** Attach the UML Class Diagram in **.pdf format** [Download UML Class Diagram PDF](uml_class_diagram.pdf)
+**Submission Requirement:** Attach the UML Class Diagram in **.pdf format** [Download UML Class Diagram PDF](https://github.com/user-attachments/files/27639598/Coffee.Rush.Tycoon.UML.May.12.2026.pdf)
 
 ## 4. Object-Oriented Programming Implementation
 Below is the complete list of classes implemented in the project along with their roles and responsibilities:
